@@ -6,7 +6,7 @@ import java.util.Random;
  * 2017 (c) Piotr Pabis 149528 Grupa 6B
  * */
 
-public class Rekord {
+public class Rekord implements Comparable<Rekord> {
 	float a,b,h;
 	
 	public Rekord(float a, float b, float wysokosc) {
@@ -30,5 +30,13 @@ public class Rekord {
 				MIN_PODSTAWA+RandomGenerator.nextFloat()*MAX_PODSTAWA,
 				MIN_PODSTAWA+RandomGenerator.nextFloat()*MAX_PODSTAWA,
 				MIN_WYSOKOSC+RandomGenerator.nextFloat()*MAX_WYSOKOSC);
+	}
+
+	@Override
+	public int compareTo(Rekord o) {
+		if(this.objetosc()==o.objetosc()) return 0;
+		else if(this.objetosc()<o.objetosc()) return -1;
+		else if(this.objetosc()>o.objetosc()) return 1;
+		return 0;
 	}
 }
