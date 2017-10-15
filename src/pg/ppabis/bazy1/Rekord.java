@@ -50,6 +50,6 @@ public class Rekord implements Comparable<Rekord> {
 	
 	@Override
 	public String toString() {
-		return "Podstawa: "+a+"x"+b+" Wys: "+h+" V="+objetosc();
+		return String.format("P: %.2fx%.2f\tWys: %.2f\tV=%.2f",a,b,h,objetosc());
 	}
 }
