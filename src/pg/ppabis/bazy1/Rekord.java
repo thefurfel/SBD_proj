@@ -1,5 +1,7 @@
 package pg.ppabis.bazy1;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Random;
 
 /*
@@ -38,5 +40,16 @@ public class Rekord implements Comparable<Rekord> {
 		else if(this.objetosc()<o.objetosc()) return -1;
 		else if(this.objetosc()>o.objetosc()) return 1;
 		return 0;
+	}
+	
+	public void wpiszDoPliku(DataOutputStream dos) throws IOException {
+		dos.writeFloat(a);
+		dos.writeFloat(b);
+		dos.writeFloat(h);
+	}
+	
+	@Override
+	public String toString() {
+		return "Podstawa: "+a+"x"+b+" Wys: "+h+" V="+objetosc();
 	}
 }
