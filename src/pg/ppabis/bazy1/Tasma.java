@@ -18,7 +18,7 @@ public class Tasma {
 		
 	}
 	
-	public void openAsInput() {
+	public Tasma openAsInput() {
 		flush();
 		if(outputStream!=null) try {
 			outputStream.close();
@@ -28,6 +28,7 @@ public class Tasma {
 			inputStream = new FileInputStream(file);
 			readPage();
 		} catch(Exception e) {}
+		return this;
 	}
 	
 	public Rekord readNext() {
@@ -52,7 +53,7 @@ public class Tasma {
 				inputStream.read(buf);
 			}
 			buffer = ByteBuffer.wrap(buf);
-			System.out.println(">>Wczytano kolejna strone");
+			System.out.println(">["+file.getName()+"]>Wczytano kolejna strone ("+buf.length+"b)");
 		} catch(Exception e){}
 	}
 	
@@ -64,7 +65,7 @@ public class Tasma {
 		return true;
 	}
 	
-	public void openAsOutput() {
+	public Tasma openAsOutput() {
 		if(inputStream!=null) try {
 			inputStream.close();
 		} catch(Exception e) {}
@@ -74,15 +75,16 @@ public class Tasma {
 			buffer = ByteBuffer.allocate(RECORDS_PER_PAGE*12);
 		} catch(Exception e) {
 		}
+		return this;
 	}
 	
 	public void flush() {
 		if(outputStream!=null) try {
-			outputStream.write(buffer.array());
+			outputStream.write(buffer.array(),0,buffer.position());
 			buffer.clear();
 			buffer = ByteBuffer.allocate(RECORDS_PER_PAGE*12);
 			outputStream.flush();
-			System.out.println(">>Flush strony");
+			System.out.println(">["+file.getName()+"]>Flush strony");
 		} catch(Exception e) {}
 	}
 	
