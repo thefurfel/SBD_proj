@@ -2,6 +2,7 @@ package pg.ppabis.bazy1;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 /*
@@ -46,6 +47,12 @@ public class Rekord implements Comparable<Rekord> {
 		dos.writeFloat(a);
 		dos.writeFloat(b);
 		dos.writeFloat(h);
+	}
+	
+	public void putIntoBuffer(ByteBuffer buf) {
+		buf.putFloat(a);
+		buf.putFloat(b);
+		buf.putFloat(h);
 	}
 	
 	@Override

@@ -20,32 +20,25 @@ public class Main {
 		} else {
 			if(args[0].equalsIgnoreCase("create")) {
 				if(args.length>2){
-					File f = new File(args[1]);
+					Tasma tasma = new Tasma(new File(args[1]));
+					tasma.openAsOutput();
 					int number = Integer.parseInt(args[2]);
-					try {
-						DataOutputStream dos = new DataOutputStream(new FileOutputStream(f));
-						for(int i=0;i<number;++i) {
-							Rekord.losowy().wpiszDoPliku(dos);
-						}
-						dos.close();
-					} catch(IOException e) {
-						System.err.println(e.getMessage());
+					for(int i=0;i<number;++i) {
+						tasma.writeNext(Rekord.losowy());
 					}
+					tasma.flush();
 				} else {
 					System.err.println("use create file.bin number");
 				}
 			} else if(args[0].equalsIgnoreCase("view")) {
 				if(args.length>1) {
-					try {
-						DataInputStream dis = new DataInputStream(new FileInputStream(args[1]));
-						while(dis.available()>=12) {
-							float a = dis.readFloat();
-							float b = dis.readFloat();
-							float h = dis.readFloat();
-							System.out.println(new Rekord(a, b, h));
-						}
-						dis.close();
-					} catch(IOException e) {System.err.println(e.getMessage());}
+					Tasma tasma = new Tasma(new File(args[1]));
+					tasma.openAsInput();
+					Rekord r = tasma.readNext();
+					while(r!=null) {
+						System.out.println(r);
+						r = tasma.readNext();
+					}
 				} else {System.err.println("use view file.bin");}
 			}
 		}
