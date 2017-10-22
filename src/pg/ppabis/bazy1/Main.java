@@ -29,7 +29,28 @@ public class Main {
 	
 	public static void fromarray(String[] args) {
 		if(args.length>2) {
-			Tasma tasma = new Tasma(new File(args[1])).openAsOutput();
+			Tasma tasma = null;
+			File f = new File(args[1]);
+			File f2 = new File(args[1]+".new");
+			boolean isnew = false;
+			if(f.exists()) {
+				Tasma tasmain = new Tasma(f).openAsInput();
+				System.out.println("!Uwaga! Plik istnieje, przenoszenie do nowego pliku!");
+				tasma = new Tasma(f2).openAsOutput();
+				Rekord r = tasmain.readNext(); int rekordy = 0;
+				while(r!=null) {
+					tasma.writeNext(r);
+					r = tasmain.readNext();
+					++rekordy;
+				}
+				System.out.println("Skopiowano "+rekordy+" starych rekordow.");
+				tasmain.close();
+				f.delete();
+				isnew = true;
+			} else {
+				tasma = new Tasma(new File(args[1])).openAsOutput();
+				isnew = false;
+			}
 			float a=1.0f, b=1.0f, h=1.0f;
 			int i=2;
 			while(i<args.length) {
@@ -42,6 +63,8 @@ public class Main {
 				tasma.writeNext(new Rekord(a,b,h));
 			}
 			tasma.flush();
+			tasma.close();
+			if(isnew) f2.renameTo(f);
 		} else {
 			System.err.println("use array file.bin records...");
 		}

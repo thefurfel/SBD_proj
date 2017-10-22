@@ -87,4 +87,13 @@ public class Tasma {
 		} catch(Exception e) {}
 	}
 	
+	public void close() {
+		if(outputStream!=null) try {
+			outputStream.close();
+		} catch(Exception e) {}
+		else if(inputStream!=null) try {
+			inputStream.close();
+		} catch(Exception e) {}
+	}
+	
 }
