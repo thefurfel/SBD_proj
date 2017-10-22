@@ -8,7 +8,6 @@ public class Tasma {
 	public static final int RECORDS_PER_PAGE=5;
 	
 	private File file;
-	private FloatBuffer floatBuffer;
 	private ByteBuffer buffer;
 	private InputStream inputStream;
 	private OutputStream outputStream;
