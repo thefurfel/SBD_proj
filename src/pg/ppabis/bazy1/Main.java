@@ -87,22 +87,28 @@ public class Main {
 			Tasma tasma3 = new Tasma(new File(args[1])); //Źródłowa taśma
 			Tasma tasma1 = new Tasma(new File(args[1].split("\\.")[0]+".1.bin"));
 			Tasma tasma2 = new Tasma(new File(args[1].split("\\.")[0]+".2.bin"));
+			
 			Tasma out = new Tasma(new File(args[1].split("\\.")[0]+".sorted.bin"));
 			Tasma dest = tasma1;
+			
 			Rekord r,r2;
 			boolean sorted = false;
 			int fazy = 1;
+			
 			while(!sorted) {
 				System.out.println("[FAZA #"+fazy+"]");
+				//Ustawienie kierunku tasm
 				tasma3.openAsInput();
 				tasma2.openAsOutput();
 				tasma1.openAsOutput();
 				
 				r = tasma3.readNext();
 				r2 = tasma3.readNext();
-			
+				
+				//Dopoki zrodlo ma rekordy
 				while(r2!=null) {
 					dest.writeNext(r);
+					//Zmien kierunek zapisu jezeli konczymy serie
 					if(r2.objetosc()<r.objetosc()) {
 						if(dest==tasma1) dest=tasma2; else dest=tasma1;
 					}
@@ -115,13 +121,20 @@ public class Main {
 				if(tasma3!=out) {
 					tasma3 = out;
 				}
+				
+				//Ustawienie kierunkow
 				tasma3.openAsOutput();
 				tasma2.openAsInput();
 				tasma1.openAsInput();
+				
 				r = tasma1.readNext();
 				r2 = tasma2.readNext();
+				
+				//Czy tasmy maja rekordy
 				if(r!=null && r2!=null) {
+					//Dopoki na ktorejs jest rekord
 					while(r!=null || r2!=null) {
+						//Jezeli na obu to scalamy
 						if(r!=null && r2!=null) {
 							if(r.objetosc()<r2.objetosc()) {
 								tasma3.writeNext(r);
@@ -130,9 +143,11 @@ public class Main {
 								tasma3.writeNext(r2);
 								r2 = tasma2.readNext();
 							}
+						//Przepisujemy z niepustej
 						} else if(r!=null) {
 							tasma3.writeNext(r);
 							r = tasma1.readNext();
+						//Przepisujemy z niepustej
 						} else if(r2!=null) {
 							tasma3.writeNext(r2);
 							r2 = tasma2.readNext();
