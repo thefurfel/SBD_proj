@@ -1,9 +1,7 @@
 package pg.ppabis.bazy1;
 
-import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 

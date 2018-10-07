@@ -105,7 +105,7 @@ public class Main {
 			Rekord r,r2;
 			boolean sorted = false;
 			int fazy = 1;
-			
+
 			while(!sorted) {
 				System.out.println("[FAZA #"+fazy+"]");
 				//Ustawienie kierunku tasm
@@ -142,36 +142,61 @@ public class Main {
 				r2 = tasma2.readNext();
 
 				//Czy tasmy maja rekordy
-				if(r!=null && r2!=null) {
-					//Dopoki na ktorejs jest rekord
-					while(r!=null || r2!=null) {
-						//Jezeli na obu to scalamy
-						if(r!=null && r2!=null) {
-							if(r.compareTo(r2)<0) {
-								tasma3.writeNext(r);
-								r = tasma1.readNext();
-							} else {
-								tasma3.writeNext(r2);
-								r2 = tasma2.readNext();
-							}
-						//Przepisujemy z niepustej
-						} else if(r!=null) {
-							tasma3.writeNext(r);
-							r = tasma1.readNext();
-						//Przepisujemy z niepustej
-						} else if(r2!=null) {
-							tasma3.writeNext(r2);
-							r2 = tasma2.readNext();
-						}
-					}
-					tasma3.flush();
-				} else {
-					sorted=true;
-				}
+                if(r!=null && r2!=null) {
+                    //Dopoki sa jakies rekordy...
+                    while(r!=null || r2!=null) {
+                        //Sa na obu tasmach
+                        if(r!=null && r2!=null) {
+                            //Scalamy, bo nigdzie seria sie nie skoczyla
+                            while(!tasma1.endSeries && !tasma2.endSeries){
+                                if(r.compareTo(r2)<0) {
+                                    tasma3.writeNext(r);
+                                    r = tasma1.readNext();
+                                } else {
+                                    tasma3.writeNext(r2);
+                                    r2 = tasma2.readNext();
+                                }
+                            }
+                            //Dopisywanie do scalonej serii az do konca tej serii
+                            while(!tasma1.endSeries) {
+                                tasma3.writeNext(r);
+                                r=tasma1.readNext();
+                            }
+                            while(!tasma2.endSeries) {
+                                tasma3.writeNext(r2);
+                                r2=tasma2.readNext();
+                            }
+                            tasma1.endSeries=false;
+                            tasma2.endSeries=false;
+                        } else if(r!=null) { //Sa na tasmie 1 -> przepisujemy az do konca
+                            tasma3.writeNext(r);
+                            r = tasma1.readNext();
+                        } else if(r2!=null) { //Sa na tasmie 2
+                            tasma3.writeNext(r2);
+                            r2 = tasma2.readNext();
+                        }
+                    }
+                    tasma1.endSeries=false;
+                    tasma2.endSeries=false;
+                    tasma3.flush();
+                } else {
+                    sorted=true;
+                }
 				fazy++;
 			}
 			System.out.println("Posortowano w "+(fazy-1)+" fazach");
+            printStats(tasma1, tasma2, tasma3);
 		}
 	}
+
+	public static void printStats(Tasma... tasm) {
+	    int ready = 0;
+	    int writy = 0;
+	    for(Tasma t: tasm) {
+            ready += t.getOdczyt();
+            writy += t.getZapis();
+	    }
+	    System.out.println("W sumie: "+ready+" odczytow, "+writy+" zapisow");
+    }
 
 }
