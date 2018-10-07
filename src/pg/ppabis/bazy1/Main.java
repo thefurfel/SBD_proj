@@ -12,7 +12,7 @@ public class Main {
 		if(args.length<1) {
 			System.out.println("Usage: Main <COMMAND> [OPTIONS]");
 			System.out.println("\nCommands:\n\tcreate <FILE> <NUM> - tworzy NUM losowych rekordow do pliku  <FILE>\n\tview <FILE> - wyswietla zawartosc <FILE>\n\t"
-					+ "array <FILE> [rekord1.a] [rekord1.b] [rekord1.h] [rekord2.a] [...] - utworz z linii komend\n"
+					+ "array <FILE> [rekord1] [rekord2] [...] - utworz z linii komend\n"
 					+ "sort <FILE> - posortuj");
 		} else {
 			if(args[0].equalsIgnoreCase("create")) {
@@ -51,22 +51,16 @@ public class Main {
 				tasma = new Tasma(new File(args[1])).openAsOutput();
 				isnew = false;
 			}
-			float a=1.0f, b=1.0f, h=1.0f;
 			int i=2;
 			while(i<args.length) {
-				a = Float.parseFloat(args[i]);
+				tasma.writeNext(new Rekord(args[i]));
 				++i;
-				if(i<args.length) b = Float.parseFloat(args[i]);
-				++i;
-				if(i<args.length) h = Float.parseFloat(args[i]);
-				++i;
-				tasma.writeNext(new Rekord(a,b,h));
 			}
 			tasma.flush();
 			tasma.close();
 			if(isnew) f2.renameTo(f);
 		} else {
-			System.err.println("use array file.bin records...");
+			System.err.println("use array file.txt records...");
 		}
 	}
 	
@@ -80,7 +74,7 @@ public class Main {
 			}
 			tasma.flush();
 		} else {
-			System.err.println("use create file.bin number");
+			System.err.println("use create file.txt number");
 		}
 	}
 	
@@ -95,17 +89,17 @@ public class Main {
 				System.out.println(r);
 				r = tasma.readNext();
 			}
-		} else {System.err.println("use view file.bin");}
+		} else {System.err.println("use view file.txt");}
 		System.out.println("Rekordow w tym pliku: "+rekordy);
 	}
 	
 	public static void sort(String[] args) {
 		if(args.length>1) {
 			Tasma tasma3 = new Tasma(new File(args[1])); //Źródłowa taśma
-			Tasma tasma1 = new Tasma(new File(args[1].split("\\.")[0]+".1.bin"));
-			Tasma tasma2 = new Tasma(new File(args[1].split("\\.")[0]+".2.bin"));
+			Tasma tasma1 = new Tasma(new File(args[1].split("\\.")[0]+".1.txt"));
+			Tasma tasma2 = new Tasma(new File(args[1].split("\\.")[0]+".2.txt"));
 			
-			Tasma out = new Tasma(new File(args[1].split("\\.")[0]+".sorted.bin"));
+			Tasma out = new Tasma(new File(args[1].split("\\.")[0]+".sorted.txt"));
 			Tasma dest = tasma1;
 			
 			Rekord r,r2;
@@ -126,7 +120,7 @@ public class Main {
 				while(r2!=null) {
 					dest.writeNext(r);
 					//Zmien kierunek zapisu jezeli konczymy serie
-					if(r2.objetosc()<r.objetosc()) {
+					if(r2.compareTo(r)<0) {
 						if(dest==tasma1) dest=tasma2; else dest=tasma1;
 					}
 					r=r2;
@@ -146,14 +140,14 @@ public class Main {
 				
 				r = tasma1.readNext();
 				r2 = tasma2.readNext();
-				
+
 				//Czy tasmy maja rekordy
 				if(r!=null && r2!=null) {
 					//Dopoki na ktorejs jest rekord
 					while(r!=null || r2!=null) {
 						//Jezeli na obu to scalamy
 						if(r!=null && r2!=null) {
-							if(r.objetosc()<r2.objetosc()) {
+							if(r.compareTo(r2)<0) {
 								tasma3.writeNext(r);
 								r = tasma1.readNext();
 							} else {
