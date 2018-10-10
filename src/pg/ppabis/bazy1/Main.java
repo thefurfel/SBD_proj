@@ -116,12 +116,15 @@ public class Main {
 				r = tasma3.readNext();
 				r2 = tasma3.readNext();
 				
+				int zmianTasmPrzyDystrybucji = 0;
+				
 				//Dopoki zrodlo ma rekordy
 				while(r2!=null) {
 					dest.writeNext(r);
 					//Zmien kierunek zapisu jezeli konczymy serie
 					if(r2.compareTo(r)<0) {
 						if(dest==tasma1) dest=tasma2; else dest=tasma1;
+						zmianTasmPrzyDystrybucji++;
 					}
 					r=r2;
 					r2 = tasma3.readNext();
@@ -183,6 +186,9 @@ public class Main {
                     sorted=true;
                 }
 				fazy++;
+				
+				System.out.println("Zmian tasm przy dystrybucji = "+zmianTasmPrzyDystrybucji);
+				if(zmianTasmPrzyDystrybucji < 2) sorted=true;
 			}
 			System.out.println("Posortowano w "+(fazy-1)+" fazach");
             printStats(tasma1, tasma2, tasma3);
