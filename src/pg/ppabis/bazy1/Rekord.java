@@ -38,8 +38,8 @@ public class Rekord implements Comparable<Rekord> {
 			str+=(char)(MIN_CHAR + RandomGenerator.nextInt(MAX_CHAR-MIN_CHAR+1));
 		return new Rekord(str);
 	}
-
-	@Override
+	
+	
 	public int compareTo(Rekord o) {
 		if(this.isZero() && o.isZero()) return 0;
 		if(this.length()==o.length()) {
