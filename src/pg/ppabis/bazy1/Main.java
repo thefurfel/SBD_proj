@@ -94,12 +94,17 @@ public class Main {
 	}
 	
 	public static void sort(String[] args) {
+		int ready = 0;
+	    int writy = 0;
 		if(args.length>1) {
 			Tasma tasma3 = new Tasma(new File(args[1])); //Źródłowa taśma
-			Tasma tasma1 = new Tasma(new File(args[1].split("\\.")[0]+".1.txt"));
-			Tasma tasma2 = new Tasma(new File(args[1].split("\\.")[0]+".2.txt"));
+			File tasmaFile1 = new File(args[1].split("\\.")[0]+".1.txt");
+			File tasmaFile2 = new File(args[1].split("\\.")[0]+".2.txt");
+			File tasmaFileOut = new File(args[1].split("\\.")[0]+".sorted.txt");
+			Tasma tasma1 = new Tasma(tasmaFile1);
+			Tasma tasma2 = new Tasma(tasmaFile2);
 			
-			Tasma out = new Tasma(new File(args[1].split("\\.")[0]+".sorted.txt"));
+			Tasma out = new Tasma(tasmaFileOut);
 			Tasma dest = tasma1;
 			
 			Rekord r,r2;
@@ -132,7 +137,9 @@ public class Main {
 				dest.writeNext(r);
 				tasma2.flush();
 				tasma1.flush();
-				if(tasma3!=out) {
+
+				if(tasma3 != out) {
+					ready += tasma3.getOdczyt();
 					tasma3 = out;
 				}
 				
@@ -182,7 +189,18 @@ public class Main {
                     tasma1.endSeries=false;
                     tasma2.endSeries=false;
                     tasma3.flush();
-                } else {
+                } else if( (r!=null || r2!=null) && zmianTasmPrzyDystrybucji == 0) { //Sortujemy posortowane
+                	tasma1.close();
+            		tasma2.close();
+            		tasma3.close();
+            		out.close();
+            		tasmaFileOut.delete();
+                	if(r!=null)
+                		tasmaFile1.renameTo(tasmaFileOut);
+                	else if(r2!=null)
+                		tasmaFile2.renameTo(tasmaFileOut);
+                	sorted=true;
+				} else {
                     sorted=true;
                 }
 				fazy++;
@@ -191,18 +209,17 @@ public class Main {
 				if(zmianTasmPrzyDystrybucji < 2) sorted=true;
 			}
 			System.out.println("Posortowano w "+(fazy-1)+" fazach");
-            printStats(tasma1, tasma2, tasma3);
+			ready += tasma1.getOdczyt();
+	        writy += tasma1.getZapis();
+	        ready += tasma2.getOdczyt();
+	        writy += tasma2.getZapis();
+	        ready += tasma3.getOdczyt();
+	        writy += tasma3.getZapis();
+	        System.out.println("W sumie: "+ready+" odczytow, "+writy+" zapisow");
+	        tasma1.close(); tasma2.close();
+            if(!tasmaFile1.delete()) System.err.println("Nie usunieto "+tasmaFile1.getName());
+            if(!tasmaFile2.delete()) System.err.println("Nie usunieto "+tasmaFile2.getName());
 		}
 	}
-
-	public static void printStats(Tasma... tasm) {
-	    int ready = 0;
-	    int writy = 0;
-	    for(Tasma t: tasm) {
-            ready += t.getOdczyt();
-            writy += t.getZapis();
-	    }
-	    System.out.println("W sumie: "+ready+" odczytow, "+writy+" zapisow");
-    }
 
 }
