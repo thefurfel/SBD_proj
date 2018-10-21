@@ -12,7 +12,7 @@ public class Main {
 		if(args.length<1) {
 			System.out.println("Usage: Main <COMMAND> [OPTIONS]");
 			System.out.println("\nCommands:\n\tcreate <FILE> <NUM> - tworzy NUM losowych rekordow do pliku  <FILE>\n\tview <FILE> - wyswietla zawartosc <FILE>\n\t"
-					+ "array <FILE> [rekord1.a] [rekord1.b] [rekord1.h] [rekord2.a] [...] - utworz z linii komend\n"
+					+ "array <FILE> [rekord1] [rekord2] [...] - utworz z linii komend\n"
 					+ "sort <FILE> - posortuj");
 		} else {
 			if(args[0].equalsIgnoreCase("create")) {
@@ -51,22 +51,16 @@ public class Main {
 				tasma = new Tasma(new File(args[1])).openAsOutput();
 				isnew = false;
 			}
-			float a=1.0f, b=1.0f, h=1.0f;
 			int i=2;
 			while(i<args.length) {
-				a = Float.parseFloat(args[i]);
+				tasma.writeNext(new Rekord(args[i]));
 				++i;
-				if(i<args.length) b = Float.parseFloat(args[i]);
-				++i;
-				if(i<args.length) h = Float.parseFloat(args[i]);
-				++i;
-				tasma.writeNext(new Rekord(a,b,h));
 			}
 			tasma.flush();
 			tasma.close();
 			if(isnew) f2.renameTo(f);
 		} else {
-			System.err.println("use array file.bin records...");
+			System.err.println("use array file.txt records...");
 		}
 	}
 	
@@ -80,7 +74,7 @@ public class Main {
 			}
 			tasma.flush();
 		} else {
-			System.err.println("use create file.bin number");
+			System.err.println("use create file.txt number");
 		}
 	}
 	
@@ -95,23 +89,28 @@ public class Main {
 				System.out.println(r);
 				r = tasma.readNext();
 			}
-		} else {System.err.println("use view file.bin");}
+		} else {System.err.println("use view file.txt");}
 		System.out.println("Rekordow w tym pliku: "+rekordy);
 	}
 	
 	public static void sort(String[] args) {
+		int ready = 0;
+	    int writy = 0;
 		if(args.length>1) {
 			Tasma tasma3 = new Tasma(new File(args[1])); //Źródłowa taśma
-			Tasma tasma1 = new Tasma(new File(args[1].split("\\.")[0]+".1.bin"));
-			Tasma tasma2 = new Tasma(new File(args[1].split("\\.")[0]+".2.bin"));
+			File tasmaFile1 = new File(args[1].split("\\.")[0]+".1.txt");
+			File tasmaFile2 = new File(args[1].split("\\.")[0]+".2.txt");
+			File tasmaFileOut = new File(args[1].split("\\.")[0]+".sorted.txt");
+			Tasma tasma1 = new Tasma(tasmaFile1);
+			Tasma tasma2 = new Tasma(tasmaFile2);
 			
-			Tasma out = new Tasma(new File(args[1].split("\\.")[0]+".sorted.bin"));
+			Tasma out = new Tasma(tasmaFileOut);
 			Tasma dest = tasma1;
 			
 			Rekord r,r2;
 			boolean sorted = false;
 			int fazy = 1;
-			
+
 			while(!sorted) {
 				System.out.println("[FAZA #"+fazy+"]");
 				//Ustawienie kierunku tasm
@@ -122,12 +121,15 @@ public class Main {
 				r = tasma3.readNext();
 				r2 = tasma3.readNext();
 				
+				int zmianTasmPrzyDystrybucji = 0;
+				
 				//Dopoki zrodlo ma rekordy
 				while(r2!=null) {
 					dest.writeNext(r);
 					//Zmien kierunek zapisu jezeli konczymy serie
-					if(r2.objetosc()<r.objetosc()) {
+					if(r2.compareTo(r)<0) {
 						if(dest==tasma1) dest=tasma2; else dest=tasma1;
+						zmianTasmPrzyDystrybucji++;
 					}
 					r=r2;
 					r2 = tasma3.readNext();
@@ -135,7 +137,9 @@ public class Main {
 				dest.writeNext(r);
 				tasma2.flush();
 				tasma1.flush();
-				if(tasma3!=out) {
+
+				if(tasma3 != out) {
+					ready += tasma3.getOdczyt();
 					tasma3 = out;
 				}
 				
@@ -146,37 +150,75 @@ public class Main {
 				
 				r = tasma1.readNext();
 				r2 = tasma2.readNext();
-				
+
 				//Czy tasmy maja rekordy
-				if(r!=null && r2!=null) {
-					//Dopoki na ktorejs jest rekord
-					while(r!=null || r2!=null) {
-						//Jezeli na obu to scalamy
-						if(r!=null && r2!=null) {
-							if(r.objetosc()<r2.objetosc()) {
-								tasma3.writeNext(r);
-								r = tasma1.readNext();
-							} else {
-								tasma3.writeNext(r2);
-								r2 = tasma2.readNext();
-							}
-						//Przepisujemy z niepustej
-						} else if(r!=null) {
-							tasma3.writeNext(r);
-							r = tasma1.readNext();
-						//Przepisujemy z niepustej
-						} else if(r2!=null) {
-							tasma3.writeNext(r2);
-							r2 = tasma2.readNext();
-						}
-					}
-					tasma3.flush();
+                if(r!=null && r2!=null) {
+                    //Dopoki sa jakies rekordy...
+                    while(r!=null || r2!=null) {
+                        //Sa na obu tasmach
+                        if(r!=null && r2!=null) {
+                            //Scalamy, bo nigdzie seria sie nie skoczyla
+                            while(!tasma1.endSeries && !tasma2.endSeries){
+                                if(r.compareTo(r2)<0) {
+                                    tasma3.writeNext(r);
+                                    r = tasma1.readNext();
+                                } else {
+                                    tasma3.writeNext(r2);
+                                    r2 = tasma2.readNext();
+                                }
+                            }
+                            //Dopisywanie do scalonej serii az do konca tej serii
+                            while(!tasma1.endSeries) {
+                                tasma3.writeNext(r);
+                                r=tasma1.readNext();
+                            }
+                            while(!tasma2.endSeries) {
+                                tasma3.writeNext(r2);
+                                r2=tasma2.readNext();
+                            }
+                            tasma1.endSeries=false;
+                            tasma2.endSeries=false;
+                        } else if(r!=null) { //Sa na tasmie 1 -> przepisujemy az do konca
+                            tasma3.writeNext(r);
+                            r = tasma1.readNext();
+                        } else if(r2!=null) { //Sa na tasmie 2
+                            tasma3.writeNext(r2);
+                            r2 = tasma2.readNext();
+                        }
+                    }
+                    tasma1.endSeries=false;
+                    tasma2.endSeries=false;
+                    tasma3.flush();
+                } else if( (r!=null || r2!=null) && zmianTasmPrzyDystrybucji == 0) { //Sortujemy posortowane
+                	tasma1.close();
+            		tasma2.close();
+            		tasma3.close();
+            		out.close();
+            		tasmaFileOut.delete();
+                	if(r!=null)
+                		tasmaFile1.renameTo(tasmaFileOut);
+                	else if(r2!=null)
+                		tasmaFile2.renameTo(tasmaFileOut);
+                	sorted=true;
 				} else {
-					sorted=true;
-				}
+                    sorted=true;
+                }
 				fazy++;
+				
+				System.out.println("Zmian tasm przy dystrybucji = "+zmianTasmPrzyDystrybucji);
+				if(zmianTasmPrzyDystrybucji < 2) sorted=true;
 			}
 			System.out.println("Posortowano w "+(fazy-1)+" fazach");
+			ready += tasma1.getOdczyt();
+	        writy += tasma1.getZapis();
+	        ready += tasma2.getOdczyt();
+	        writy += tasma2.getZapis();
+	        ready += tasma3.getOdczyt();
+	        writy += tasma3.getZapis();
+	        System.out.println("W sumie: "+ready+" odczytow, "+writy+" zapisow");
+	        tasma1.close(); tasma2.close();
+            if(!tasmaFile1.delete()) System.err.println("Nie usunieto "+tasmaFile1.getName());
+            if(!tasmaFile2.delete()) System.err.println("Nie usunieto "+tasmaFile2.getName());
 		}
 	}
 

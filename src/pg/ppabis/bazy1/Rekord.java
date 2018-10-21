@@ -1,8 +1,8 @@
 package pg.ppabis.bazy1;
 
-import java.io.DataOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Random;
 
 /*
@@ -10,53 +10,59 @@ import java.util.Random;
  * */
 
 public class Rekord implements Comparable<Rekord> {
-	float a,b,h;
+	byte[] values;
+	byte[] sortedValues;
 	
-	public Rekord(float a, float b, float wysokosc) {
-		this.a=a;
-		this.b=b;
-		this.h=wysokosc;
-	}
-	
-	public float objetosc() {
-		return a*b*h;
-	}
-	
-	
-	public static final Random RandomGenerator = new Random();
-	public static final float MIN_PODSTAWA = 2f;
-	public static final float MAX_PODSTAWA = 10f;
-	public static final float MIN_WYSOKOSC = 10f;
-	public static final float MAX_WYSOKOSC = 30f;
-	public static Rekord losowy() {
-		return new Rekord(
-				MIN_PODSTAWA+RandomGenerator.nextFloat()*MAX_PODSTAWA,
-				MIN_PODSTAWA+RandomGenerator.nextFloat()*MAX_PODSTAWA,
-				MIN_WYSOKOSC+RandomGenerator.nextFloat()*MAX_WYSOKOSC);
+	public Rekord(String input) {
+		values = input.getBytes().clone();
+		sortedValues = values.clone();
+		Arrays.sort(sortedValues);
 	}
 
-	@Override
+	public boolean isZero() {
+		for(int i=0; i<values.length; ++i) if(values[i]!='0') return false;
+		return true;
+	}
+
+	public int length() {return values.length;}
+	
+	public static final Random RandomGenerator = new Random();
+	public static final byte MIN_CHAR = '0';
+	public static final byte MAX_CHAR = '9';
+	public static final byte MAX_LENGTH = 30;
+	public static final byte MIN_LENGTH = 1;
+	public static Rekord losowy() {
+		int l = MIN_LENGTH + RandomGenerator.nextInt(MAX_LENGTH-MIN_LENGTH);
+		String str = "";
+		for(int i=0; i<l; ++i)
+			str+=(char)(MIN_CHAR + RandomGenerator.nextInt(MAX_CHAR-MIN_CHAR+1));
+		return new Rekord(str);
+	}
+	
+	
 	public int compareTo(Rekord o) {
-		if(this.objetosc()==o.objetosc()) return 0;
-		else if(this.objetosc()<o.objetosc()) return -1;
-		else if(this.objetosc()>o.objetosc()) return 1;
+		if(this.isZero() && o.isZero()) return 0;
+		if(this.length()==o.length()) {
+			for(int i=this.length()-1; i >= 0 ;--i) {
+				if(this.sortedValues[i]<o.sortedValues[i]) return -1;
+				else if(this.sortedValues[i]>o.sortedValues[i]) return 1;
+			}
+		} else if(this.length()<o.length()) {
+			if(!this.isZero() && o.isZero()) return 1;
+			else return -1;
+		} else if(this.length()>o.length()) {
+			if(this.isZero() && !o.isZero()) return -1;
+			else return 1;
+		}
 		return 0;
 	}
 	
-	public void wpiszDoPliku(DataOutputStream dos) throws IOException {
-		dos.writeFloat(a);
-		dos.writeFloat(b);
-		dos.writeFloat(h);
-	}
-	
-	public void putIntoBuffer(ByteBuffer buf) {
-		buf.putFloat(a);
-		buf.putFloat(b);
-		buf.putFloat(h);
+	public void wpiszDoPliku(FileWriter fw) throws IOException {
+		fw.write(new String(values));
 	}
 	
 	@Override
 	public String toString() {
-		return String.format("P: %.2fx%.2f\tWys: %.2f\tV=%.2f",a,b,h,objetosc());
+		return new String(values);
 	}
 }

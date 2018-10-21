@@ -1,99 +1,116 @@
 package pg.ppabis.bazy1;
 
 import java.io.*;
-import java.nio.*;
 
 public class Tasma {
 
-	public static final int RECORDS_PER_PAGE=5;
-	
+	public static final int RECORDS_PER_PAGE=128;
+	private Rekord[] strona = new Rekord[RECORDS_PER_PAGE];
+	private int wskStrona = 0;
+
 	private File file;
-	private ByteBuffer buffer;
-	private InputStream inputStream;
-	private OutputStream outputStream;
-	
+	private BufferedReader fileReader;
+	private FileWriter fileWriter;
+
+	public boolean endSeries = false;
+	private Rekord last = null;
+
+	private int odczyt = 0;
+	private int zapis = 0;
+
+
 	public Tasma(File f) {
 		file = f;
-		
+		odczyt=0;
+		zapis=0;
 	}
 	
 	public Tasma openAsInput() {
 		flush();
-		if(outputStream!=null) try {
-			outputStream.close();
-		} catch(Exception e) {}
-		outputStream = null;
+		if(fileWriter!=null) try {
+			fileWriter.close();
+		} catch(Exception e) {e.printStackTrace();}
+		fileWriter = null;
 		try {
-			inputStream = new FileInputStream(file);
+			fileReader = new BufferedReader(new FileReader(file));
 			readPage();
-		} catch(Exception e) {}
+		} catch(Exception e) {e.printStackTrace();}
 		return this;
 	}
 	
 	public Rekord readNext() {
-		if(eof() && !buffer.hasRemaining()) return null;
-		if(!buffer.hasRemaining()) readPage();
-		return new Rekord(buffer.getFloat(),buffer.getFloat(),buffer.getFloat());
+		if(wskStrona<RECORDS_PER_PAGE && strona[wskStrona]==null) {endSeries=true; return null;}
+		if(wskStrona>= RECORDS_PER_PAGE) readPage();
+		Rekord n = strona[wskStrona++];
+		if(last!=null) {
+			if(n==null || last.compareTo(n)>0) {
+				last = n;
+				endSeries = true;
+				System.out.println(">>Tasma: nastapil koniec serii");
+			} else {
+				last=n;
+			}
+		} else {
+			last = n;
+		}
+		return n;
 	}
 	
 	public void writeNext(Rekord r) {
-		if(!buffer.hasRemaining()) flush();
-		r.putIntoBuffer(buffer);
+		if(wskStrona>=RECORDS_PER_PAGE) flush();
+		strona[wskStrona++]=r;
 	}
 	
 	private void readPage() {
 		try	{ 
-			byte[] buf = new byte[0];
-			if(inputStream.available()>=RECORDS_PER_PAGE*12) {
-				buf = new byte[RECORDS_PER_PAGE*12];
-				inputStream.read(buf);
-			} else {
-				buf = new byte[inputStream.available()];
-				inputStream.read(buf);
+			strona = new Rekord[RECORDS_PER_PAGE];
+			wskStrona = 0;
+			String s = null;
+			int i=0;
+			while( i<RECORDS_PER_PAGE && (s = fileReader.readLine()) != null) {
+				strona[i] = new Rekord(s);
+				++i;
 			}
-			buffer = ByteBuffer.wrap(buf);
-			System.out.println(">["+file.getName()+"]>Wczytano kolejna strone ("+buf.length+"b)");
-		} catch(Exception e){}
-	}
-	
-	private boolean eof() {
-		try {
-			if(inputStream.available()<=0) return true;
-			return false;
-		} catch(Exception e){}
-		return true;
+			odczyt++;
+			System.out.println(">["+file.getName()+"]>Wczytano kolejna strone ("+i+" rekordow)");
+		} catch(Exception e){e.printStackTrace();}
 	}
 	
 	public Tasma openAsOutput() {
-		if(inputStream!=null) try {
-			inputStream.close();
-		} catch(Exception e) {}
-		inputStream = null;
+		if(fileReader!=null) try {
+			fileReader.close();
+		} catch(Exception e) {e.printStackTrace();}
+		fileReader = null;
 		try {
-			outputStream = new FileOutputStream(file);
-			buffer = ByteBuffer.allocate(RECORDS_PER_PAGE*12);
-		} catch(Exception e) {
+			fileWriter = new FileWriter(file);
+			strona = new Rekord[RECORDS_PER_PAGE];
+		} catch(Exception e) {e.printStackTrace();
 		}
 		return this;
 	}
 	
 	public void flush() {
-		if(outputStream!=null) try {
-			outputStream.write(buffer.array(),0,buffer.position());
-			buffer.clear();
-			buffer = ByteBuffer.allocate(RECORDS_PER_PAGE*12);
-			outputStream.flush();
+		if(fileWriter!=null) try {
+			for(int i=0;i<RECORDS_PER_PAGE;++i)
+				if(strona[i]!=null)
+					fileWriter.write(strona[i].toString()+"\r\n");
+			fileWriter.flush();
+			zapis++;
+			wskStrona = 0;
+			strona = new Rekord[RECORDS_PER_PAGE];
 			System.out.println(">["+file.getName()+"]>Flush strony");
-		} catch(Exception e) {}
+		} catch(Exception e) {e.printStackTrace();}
 	}
 	
 	public void close() {
-		if(outputStream!=null) try {
-			outputStream.close();
-		} catch(Exception e) {}
-		else if(inputStream!=null) try {
-			inputStream.close();
-		} catch(Exception e) {}
+		if(fileWriter!=null) try {
+			fileWriter.close();
+		} catch(Exception e) {e.printStackTrace();}
+		else if(fileReader!=null) try {
+			fileReader.close();
+		} catch(Exception e) {e.printStackTrace();}
 	}
-	
+
+	public int getOdczyt(){return odczyt;}
+	public int getZapis() {return zapis;}
 }
